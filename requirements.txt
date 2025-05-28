@@ -1,0 +1,15 @@
+requests
+beautifulsoup4
+tqdm
+urllib3
+Pillow
+torch
+transformers
+faiss-cpu
+numpy
+langchain-community
+sentence-transformers
+streamlit
+google-generativeai
+python-dotenv
+langchain-huggingface
