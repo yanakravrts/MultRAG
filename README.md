@@ -14,23 +14,22 @@ MultRAG (Multi-modal Retrieval Augmented Generation) is an AI chatbot designed t
 
 ## Project Structure
 
-
 MultRAG/
 ├── data/
-│ ├── raw/
-│ │ └── article_data.json # Raw scraped article data
-│ └── embeddings/
-│ ├── text_embeddings/ # FAISS index for text embeddings
-│ ├── media_embeddings.faiss # FAISS index for image embeddings
-│ └── media_urls.json # URLs corresponding to media_embeddings
-├── app.py # Main Streamlit application
-├── fetch_articles.py # Script to scrape and process articles
-├── text_embeddings.py # Script to generate and save text embeddings
-├── media_embeddings.py # Script to generate and save image embeddings
-├── requirements.txt # Python dependencies
-├── .env.example # Example for environment variables
-├── .gitignore # Specifies files/directories to ignore by Git
-└── README.md # This documentation file
+│   ├── raw/
+│   │   └── article_data.json         # Raw scraped article data
+│   └── embeddings/
+│       ├── text_embeddings/          # FAISS index for text embeddings
+│       ├── media_embeddings.faiss    # FAISS index for image embeddings
+│       └── media_urls.json           # URLs corresponding to media_embeddings
+├── app.py                            # Main Streamlit application
+├── fetch_articles.py                 # Script to scrape and process articles
+├── text_embeddings.py                # Script to generate and save text embeddings
+├── media_embeddings.py               # Script to generate and save image embeddings
+├── requirements.txt                  # Python dependencies
+├── .env.example                      # Example for environment variables
+├── .gitignore                        # Specifies files/directories to ignore by Git
+└── README.md                         # This documentation file
 
 ## Setup Instructions
 
