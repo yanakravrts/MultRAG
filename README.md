@@ -61,3 +61,62 @@ streamlit run app.py
 Type your questions related to DeepLearning.AI "The Batch" articles into the input field.
 The chatbot will retrieve relevant text snippets and images, and generate an answer.
 Sources (article links) and a relevant image will be displayed below the generated answer.
+
+## Evaluation
+
+### Text Evaluation
+- Precision@3 = 0.3333  
+- Recall = 1.0000  
+- Retrieved Text URLs:  
+  - [https://www.deeplearning.ai/the-batch/issue-289/](https://www.deeplearning.ai/the-batch/issue-289/)  
+- Relevant Text URLs (Ground Truth):  
+  - [https://www.deeplearning.ai/the-batch/issue-289/](https://www.deeplearning.ai/the-batch/issue-289/)
+
+---
+
+- Precision@3 = 0.3333  
+- Recall = 1.0000  
+- Retrieved Text URLs:  
+  - [https://www.deeplearning.ai/the-batch/issue-290/](https://www.deeplearning.ai/the-batch/issue-290/)  
+  - [https://www.deeplearning.ai/the-batch/issue-291/](https://www.deeplearning.ai/the-batch/issue-291/)  
+- Relevant Text URLs (Ground Truth):  
+  - [https://www.deeplearning.ai/the-batch/issue-290/](https://www.deeplearning.ai/the-batch/issue-290/)
+
+---
+
+- Precision@3 = 0.3333  
+- Recall = 1.0000  
+- Retrieved Text URLs:  
+  - [https://www.deeplearning.ai/the-batch/issue-294/](https://www.deeplearning.ai/the-batch/issue-294/)  
+  - [https://www.deeplearning.ai/the-batch/issue-293/](https://www.deeplearning.ai/the-batch/issue-293/)  
+- Relevant Text URLs (Ground Truth):  
+  - [https://www.deeplearning.ai/the-batch/issue-294/](https://www.deeplearning.ai/the-batch/issue-294/)
+
+---
+
+### Image Evaluation
+- Precision@1 = 1.0000  
+- Retrieved Image URL:  
+  - ![Image 1](https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.png)  
+- Relevant Image URLs (Ground Truth):  
+  - [https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.png](https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.png)
+
+---
+
+- Precision@1 = 1.0000  
+- Retrieved Image URL:  
+  - ![Image 2](https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.jpg)  
+- Relevant Image URLs (Ground Truth):  
+  - [https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.jpg](https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.jpg)
+
+---
+
+- Precision@1 = 0.0000  
+- Retrieved Image URL:  
+  - ![Image 3](https://dl-staging-website.ghost.io/content/images/2025/04/unnamed--56-.gif)  
+- Relevant Image URLs (Ground Truth):  
+  - [https://dl-staging-website.ghost.io/content/images/2025/03/unnamed--56-.jpg](https://dl-staging-website.ghost.io/content/images/2025/03/unnamed--56-.jpg)
+
+---
+
+**Note:** Low Precision happens because of duplicates.
