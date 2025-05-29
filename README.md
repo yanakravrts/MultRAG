@@ -12,7 +12,6 @@ MultRAG (Multi-modal Retrieval Augmented Generation) is an AI chatbot designed t
 - **Structured Output:** Presents answers, relevant images, and source links in a clear, organized manner.
 - **Dynamic Data Collection:** Includes scripts to scrape and process articles from "The Batch" website.
 
-
 ## Setup Instructions
 
 ### 1. Clone the Repository
