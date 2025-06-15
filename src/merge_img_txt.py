@@ -19,6 +19,7 @@ def load_json_file(filepath):
         print(f"Error: Could not decode JSON from {filepath}")
         return None
 
+
 def merge_article_and_image_data(article_data, image_descriptions):
     """
     Merges article data with corresponding image descriptions.
@@ -48,6 +49,7 @@ def merge_article_and_image_data(article_data, image_descriptions):
 
     return merged_data
 
+
 def save_json_file(data, filepath):
     """
     Saves data to a JSON file.
@@ -65,6 +67,7 @@ def save_json_file(data, filepath):
     except IOError as e:
         print(f"Error: Could not save data to {filepath}. {e}")
         return False
+
 
 if __name__ == "__main__":
     article_data_path = 'data/raw/article_data.json'
