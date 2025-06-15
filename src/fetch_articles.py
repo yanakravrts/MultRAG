@@ -2,16 +2,18 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import json
-from urllib.parse import urlparse, parse_qs, unquote
+from urllib.parse import urlparse, parse_qs, unquote, urljoin
 from pathlib import Path 
 
 
 batch_url = "https://www.deeplearning.ai/the-batch/"
 base_url = "https://www.deeplearning.ai"
+TOTAL_BATCH_PAGES = 22 
+
 
 def get_all_articles_links():
     """
-    Retrieves all unique article links from the main The Batch page.
+    Retrieves all unique article links from all specified pages of The Batch.
 
     Returns:
         list: A list of full URLs to article issues.
@@ -19,32 +21,48 @@ def get_all_articles_links():
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
     }
-    response = requests.get(batch_url, headers=headers)
-    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    all_links = set()  
 
-    links = []
-    for a in soup.find_all("a", href=True):
-        href = a['href']
-        if href.startswith("/the-batch/issue-"):
-            full_url = base_url + href
-            links.append(full_url)
+    for page_num in tqdm(range(1, TOTAL_BATCH_PAGES + 1), desc="Scanning pages for links"):
+        if page_num == 1:
+            current_page_url = batch_url 
+        else:
+            current_page_url = f"{batch_url}page/{page_num}/" 
 
-    return list(set(links))  
+        print(f"Scraping page {page_num}: {current_page_url}")
+        
+        try:
+            response = requests.get(current_page_url, headers=headers, timeout=15) 
+            response.raise_for_status() 
+            soup = BeautifulSoup(response.content, 'html.parser')
+
+            for a in soup.find_all("a", href=True):
+                href = a['href']
+                if (
+                    href.startswith("/the-batch/") and
+                    not href.startswith("/the-batch/tag") and 
+                    href != "/the-batch/" and 
+                    not href.startswith("/the-batch/page/") 
+                ):
+                    full_url = urljoin(base_url, href) 
+                    all_links.add(full_url)
+
+        except requests.exceptions.RequestException as e:
+            print(f"[!] Error fetching {current_page_url}: {e}")
+            continue 
+
+    return list(all_links)
+
 
 def clean_image_urls(image_urls):
     """
     Cleans and normalizes a list of image URLs.
-
-    Args:
-        image_urls (list): Raw image URLs extracted from the article.
-
-    Returns:
-        list: A cleaned list of direct image URLs.
     """
     clean_urls = []
     for url in image_urls:
         if url.startswith("data:image"):
-            continue  # Skip base64 images
+            continue  
         
         if url.startswith("https://www.deeplearning.ai/_next/image/?url="):
             parsed_url = urlparse(url)
@@ -63,28 +81,26 @@ def clean_image_urls(image_urls):
     
     return clean_urls
 
+
 def parse_article(url):
     """
     Parses a single article from The Batch.
-
-    Args:
-        url (str): URL of the article.
-
-    Returns:
-        dict or None: A dictionary containing article title, date, URL, content, and image URLs.
     """
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
         }
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=15) 
+        r.raise_for_status() 
         soup = BeautifulSoup(r.content, "html.parser")
 
         title = soup.find("h1").get_text(strip=True) if soup.find("h1") else "No Title"
         date = soup.find("time").get("datetime") if soup.find("time") else None
-
-        content_divs = soup.select("article div")
-        content = "\n".join([div.get_text(strip=True) for div in content_divs])
+        content_elements = soup.select("div.prose.max-w-none.md\\:prose-lg.text-base.md\\:text-lg p, div.prose.max-w-none.md\\:prose-lg.text-base.md\\:text-lg h2, div.prose.max-w-none.md\\:prose-lg.text-base.md\\:text-lg li")
+        if not content_elements: 
+            content_elements = soup.select("article p, article h2, article li")
+        
+        content = "\n".join([el.get_text(strip=True) for el in content_elements])
 
         imgs = soup.select("article img")
         image_urls = []
@@ -107,9 +123,13 @@ def parse_article(url):
             "content": content,
             "image_urls": image_urls,
         }
+    except requests.exceptions.RequestException as e:
+        print(f"[!] HTTP Error parsing {url}: {e}")
+        return None
     except Exception as e:
         print(f"[!] Failed to parse {url}: {e}")
         return None
+
 
 def collect_articles():
     """
@@ -121,7 +141,9 @@ def collect_articles():
     links = get_all_articles_links()
     data = []
 
-    for link in tqdm(links, desc="Collecting articles"):
+    valid_links = [link for link in links if link is not None]
+
+    for link in tqdm(valid_links, desc="Collecting articles"):
         article = parse_article(link)
         if article:
             data.append(article)

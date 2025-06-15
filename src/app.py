@@ -152,6 +152,8 @@ def retrieve_images(query, clip_model, clip_processor, media_index, media_urls):
     inputs = clip_processor(text=query, return_tensors="pt")
     with torch.no_grad():
         text_features = clip_model.get_text_features(**inputs)
+    #Це рядок коду нормалізує вектор текстових ознак (вбудовування) до одиничної довжини. 
+    # Це важливо для косинусної схожості, оскільки косинус кута між двома векторами є внутрішнім добутком їхніх нормалізованих версі    
     query_embedding = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
     D, I = media_index.search(query_embedding.cpu().numpy().astype('float32'), 1)
 
