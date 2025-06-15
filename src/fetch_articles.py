@@ -8,7 +8,7 @@ from pathlib import Path
 
 batch_url = "https://www.deeplearning.ai/the-batch/"
 base_url = "https://www.deeplearning.ai"
-TOTAL_BATCH_PAGES = 22 
+TOTAL_BATCH_PAGES = 2
 
 
 def get_all_articles_links():
