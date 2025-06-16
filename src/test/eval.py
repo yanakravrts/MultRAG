@@ -4,7 +4,7 @@ from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
-from ragas.metrics import MultiModalFaithfulness, LLMContextPrecisionWithoutReference, LLMContextRecall, ContextEntityRecall, ResponseRelevancy, Faithfulness
+from ragas.metrics import MultiModalFaithfulness, MultiModalRelevance, LLMContextPrecisionWithoutReference, LLMContextRecall, ContextEntityRecall, ResponseRelevancy, Faithfulness
 from ragas import evaluate
 from dotenv import load_dotenv, find_dotenv
 import os
@@ -50,6 +50,7 @@ dataset = Dataset.from_dict(data_samples)
 score = evaluate(
     dataset, metrics=[
         MultiModalFaithfulness(),
+        MultiModalRelevance(),
         LLMContextPrecisionWithoutReference(llm=evaluator_llm),
         LLMContextRecall(llm=evaluator_llm),
         ContextEntityRecall(llm=evaluator_llm),
