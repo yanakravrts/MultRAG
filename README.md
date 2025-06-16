@@ -1,10 +1,10 @@
 # MultRAG: AI Chatbot for DeepLearning.AI The Batch Articles
 
-## Overview
+## Overview 🕵‍♀️
 
 MultRAG (Multi-modal Retrieval Augmented Generation) is an AI chatbot designed to answer questions specifically about articles from DeepLearning.AI's "The Batch" newsletter. It leverages a combination of text embeddings and generated image descriptions to provide comprehensive and contextually relevant answers. The chatbot is built using Streamlit for the user interface and integrates with Google's Gemini-1.5-Flash model for natural language generation.
 
-## Features
+## Features 🧚‍♂️
 
 - **Intelligent Text Retrieval:** Uses Weaviate vector store with BAAI/bge-base-en-v1.5 embeddings to find the most relevant article snippets based on user queries.
 - **Image Contextualization:** Generates descriptions for images using Google's Gemini-1.5-Flash, and then uses these descriptions (embedded with BAAI/bge-base-en-v1.5) to find and display images semantically related to the user's question.
@@ -65,6 +65,6 @@ Type your questions related to DeepLearning.AI "The Batch" articles into the inp
 The chatbot will retrieve relevant text snippets and images, and generate an answer.
 Sources (article links) and a relevant image will be displayed below the generated answer.
 
-## Evaluation
+## Evaluation 🧝‍♀️
 
 ![Relevant Image](src/test/newplot-2.png )
