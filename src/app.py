@@ -37,7 +37,7 @@ def is_valid_image_url(url):
     return url and url.startswith(("http://", "https://")) and not url.lower().startswith(("data:image/svg+xml", "data:image/gif;base64"))
 
 
-def retrieve_content(query, text_embeddings_model, weaviate_chunks_collection, top_k_text=5):
+def retrieve_content(query, text_embeddings_model, weaviate_chunks_collection, top_k_text=7):
     """
     Retrieves the most relevant articles and finds the most semantically relevant image.
     If none of the text chunks are sufficiently relevant to the query, no image is returned.
@@ -67,7 +67,7 @@ def retrieve_content(query, text_embeddings_model, weaviate_chunks_collection, t
         if content.strip(): 
             content_embedding = text_embeddings_model.embed_query(content)
             similarity = cosine_similarity([query_embedding], [content_embedding])[0][0]
-            if similarity > 0.7:  
+            if similarity > 0.5:  
                 context_matches = True
                 break
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
                 content = content.replace("\n\n---\n\n", "")
                 chat_history_str += f"{role}: {content.strip()}\n"
 
-            relevant_content_docs, top_image_url = retrieve_content(prompt, text_embeddings_model, weaviate_chunks_collection, top_k_text=2)
+            relevant_content_docs, top_image_url = retrieve_content(prompt, text_embeddings_model, weaviate_chunks_collection, top_k_text=5)
 
             if not relevant_content_docs:
                 assistant_reply = (
@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
             context_text = ""
             unique_article_links = {}
-            for doc in relevant_content_docs:
+            for doc in relevant_content_docs[:5]:
                 context_text += f"Content: {doc['content']}\nTitle: {doc['title']}\n\n"
                 if 'url' in doc:
                     unique_article_links[doc['url']] = doc['title']
@@ -171,7 +171,7 @@ You are an expert on articles, providing helpful, comprehensive, and accurate an
 - Do NOT repeat the user's question in the answer unless necessary for clarity.
 - Stay neutral and factual. Do not express opinions or speculate beyond the content.
 
-### Context from Articles
+### Context from Articles (multiple chunks)
 {context_text}
 
 ### Relevant Image Information
@@ -193,7 +193,7 @@ Provide your detailed and accurate answer based on the above information.
 """
 
             try:
-                gemini_response = model.generate_content(full_prompt, generation_config=genai.GenerationConfig(temperature=0.3))
+                gemini_response = model.generate_content(full_prompt, generation_config=genai.GenerationConfig(temperature=0.1))
                 assistant_reply = re.sub(r'!?\[.*?\]\(https?://[^\s)]+\)|https?://[^\s)]+', '', gemini_response.text).strip()
             except Exception as e:
                 assistant_reply = f"An error occurred while generating the response: {e}"
@@ -204,6 +204,11 @@ Provide your detailed and accurate answer based on the above information.
 
             if article_links_output:
                 assistant_reply += "\n\n---\n\nFor more information, click on the links below 👀👀👀:\n" + article_links_output
+            # Show retrieved context chunks for evaluation/debugging
+            with st.expander("🔍 View Retrieved Context Chunks"):
+                for idx, doc in enumerate(relevant_content_docs):
+                    st.markdown(f"**Chunk {idx + 1}:**")
+                    st.text(doc["content"])
 
             st.markdown(assistant_reply)
             st.session_state.messages.append({"role": "assistant", "content": assistant_reply})

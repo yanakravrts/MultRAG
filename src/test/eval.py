@@ -1,77 +1,80 @@
+import pandas as pd
+import plotly.graph_objects as go
+from ragas.llms import LangchainLLMWrapper
+from ragas.embeddings import LangchainEmbeddingsWrapper
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
+from ragas.metrics import MultiModalFaithfulness, LLMContextPrecisionWithoutReference, LLMContextRecall, ContextEntityRecall, ResponseRelevancy, Faithfulness
+from ragas import evaluate
+from dotenv import load_dotenv, find_dotenv
 import os
-import sys
-import numpy as np
-import json
-
-sys.path.append(os.path.abspath('src')) 
+import google.generativeai as genai
+from datasets import Dataset
 
 
-from app import retrieve_text, retrieve_images
-from app import text_embeddings_model, text_vectorstore, clip_model, clip_processor, media_index, media_urls, articles_data
+load_dotenv(find_dotenv())
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-eval_queries = [
-    {
-        "query": "How did a Skyfire AI drone help save a police officer's life during a traffic stop?",
-        "relevant_articles_urls": ["https://www.deeplearning.ai/the-batch/issue-289/"],
-        "relevant_image_urls": ["https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.png"]
-    },
-    {
-        "query": "What is the primary benefit of using an STT → LLM/Agentic workflow → TTS pipeline for voice applications, as opposed to direct voice-in voice-out models?",
-        "relevant_articles_urls": ["https://www.deeplearning.ai/the-batch/issue-290/"],
-        "relevant_image_urls": ["https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.jpg"]
-    },
-    {
-        "query": "What should teams consider before deciding to fine-tune a model?",
-        "relevant_articles_urls": ["https://www.deeplearning.ai/the-batch/issue-294/"],
-        "relevant_image_urls": ["https://dl-staging-website.ghost.io/content/images/2025/03/unnamed--56-.jpg"]
-    }
-]
+evaluator_llm = LangchainLLMWrapper(ChatGoogleGenerativeAI(model="gemini-1.5-flash"))
+evaluator_embeddings = LangchainEmbeddingsWrapper(HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5"))
 
-def recall(retrieved_items, relevant_items):
-    if not relevant_items:
-        return 1.0 if not retrieved_items else 0.0
-    intersection = len(retrieved_items.intersection(relevant_items))
-    return intersection / len(relevant_items)
+data_samples = {
+    "question": [
+        "What did Skyfire AI drone do during a traffic stop?",
+        "When to use QLoRa?",
+        "Comparison between Gemma and different models"
+    ],
+    "reference": [
+        "The Skyfire AI drone was redirected to find a missing officer during a traffic stop.",
+        "I couldn't find specific articles for your query in my database 💁‍♀️Please try rephrasing your question.",
+        "Gemma 3 4B is comparable to Gemma 2 9B, Llama 3.1 8B, and Qwen2.5-7B, and slightly trails Microsoft Phi-4 Mini except on MATH."
+    ],
+    "answer": [
+        "The Skyfire AI drone was rerouted to help locate a police officer who had stopped a suspicious vehicle and hadn't been heard from since. The officer had stopped at a complex cloverleaf intersection of two major highways, and the drone's assistance was requested because dispatch was unsure of the officer's exact location. The drone was returning to base after a false alarm when it was redirected.",
+        "I couldn't find specific articles for your query in my database 💁‍♀️Please try rephrasing your question.",
+        "Gemma 3 4B performs similarly to Gemma 2 9B, Llama 3.1 8B, and Qwen2.5-7B, but slightly trails Microsoft Phi-4 Mini (also a 4-billion parameter model) except in MATH performance, based on Microsoft's testing. Gemma 3 12B surpasses Gemma 2 27B and shows comparable performance to Gemini 1.5 Flash (according to TIGER-Lab's tests) and Anthropic Claude 3.5 Haiku (according to Anthropic's tests). It outperforms these larger, proprietary models on MATH. There is no relevant image available either."
+    ],
+    "contexts": [
+        ["In January, a Skyfire AI drone was returning to base after responding to a false alarm when the police dispatcher asked us to reroute it to help locate a patrol officer. The officer had radioed a few minutes earlier that he had pulled over a suspicious vehicle and had not been heard from since. The officer had stopped where two major highways intersect in a complex cloverleaf, and dispatch was unsure exactly where they were located."],
+        [],
+        ["Gemma 3 4B achieves roughly comparable performance to Gemma 2 9B, Llama 3.1 8B, and Qwen2.5-7B. It’s slightly behind Microsoft Phi-4 Mini (also 4 billion parameters), except on MATH, according to that company’s tests.Gemma 3 12B improves on Gemma 2 27B and compares to Gemini 1.5 Flash (in TIGER-Lab’s tests) and Anthropic Claude 3.5 Haiku (in that developer’s tests). It outperforms the larger, proprietary models on MATH."]
+    ],
+    "image": [
+        ["https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.png"],
+        [],
+        ["https://dl-staging-website.ghost.io/content/images/2025/02/unnamed--52-.jpg"]
+    ]
+}
+dataset = Dataset.from_dict(data_samples)
 
-def precision_at_k(retrieved_items_top_k, relevant_items, k):
-    if not retrieved_items_top_k or k == 0:
-        return 0.0
-    retrieved_at_k = set(retrieved_items_top_k[:k])
-    intersection = len(retrieved_at_k.intersection(relevant_items))
-    return intersection / k
+score = evaluate(
+    dataset, metrics=[
+        MultiModalFaithfulness(),
+        LLMContextPrecisionWithoutReference(llm=evaluator_llm),
+        LLMContextRecall(llm=evaluator_llm),
+        ContextEntityRecall(llm=evaluator_llm),
+        ResponseRelevancy(llm=evaluator_llm,embeddings=evaluator_embeddings),
+        Faithfulness(llm=evaluator_llm)
+          ],
+      llm=evaluator_llm,
+      embeddings=evaluator_embeddings
+)
 
-all_precision_at_k_text = []
-all_recall_text = []
-all_precision_at_1_image = [] 
+df = score.to_pandas()
 
 
-for i, test_case in enumerate(eval_queries):
-    query = test_case["query"]
-    relevant_article_urls = set(test_case["relevant_articles_urls"])
-    relevant_image_urls = set(test_case["relevant_image_urls"])
+fig = go.Figure(data=[go.Table(
+    header=dict(values=list(df.columns),
+                fill_color='paleturquoise',
+                align='left'),
+    cells=dict(values=[df[col] for col in df.columns],
+               fill_color='lavender',
+               align='left'))
+])
 
-    k_text = 3
-    retrieved_text_docs = retrieve_text(query, text_embeddings_model, text_vectorstore, articles_data, top_k=k_text)
-    retrieved_text_urls = [doc['url'] for doc in retrieved_text_docs if 'url' in doc]
 
-    precision_k_text = precision_at_k(retrieved_text_urls, relevant_article_urls, k_text)
-    recall_text = recall(set(retrieved_text_urls), relevant_article_urls)
+fig.update_layout(title_text="Evaluation")
 
-    all_precision_at_k_text.append(precision_k_text)
-    all_recall_text.append(recall_text)
+fig.write_html("ragas_evaluation_table.html")
 
-    print(f"  Text: Precision@{k_text} = {precision_k_text:.4f}, Recall = {recall_text:.4f}")
-    print(f"    Retrieved Text URLs: {retrieved_text_urls}")
-    print(f"    Relevant Text URLs (Ground Truth): {list(relevant_article_urls)}")
-
-    retrieved_image_url = retrieve_images(query, clip_model, clip_processor, media_index, media_urls)
-
-    precision_1_image = 0.0
-    if retrieved_image_url and retrieved_image_url in relevant_image_urls:
-        precision_1_image = 1.0
-
-    all_precision_at_1_image.append(precision_1_image)
-
-    print(f"  Image: Precision@1 = {precision_1_image:.4f}")
-    print(f"    Retrieved Image URL: {retrieved_image_url}")
-    print(f"    Relevant Image URLs (Ground Truth): {list(relevant_image_urls)}")
+print("Інтерактивну таблицю збережено у файл ragas_evaluation_table.html")
